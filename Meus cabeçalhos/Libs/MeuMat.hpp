@@ -51,6 +51,7 @@ inline namespace MeuMat {
 	// Pode ser usado como posições cardinais (Vec3) ou ângulos (Ang3)
 	// (utiliza _unions_ então são apenas 3 floats)
 	typedef struct Vec3 {
+
 		union {
 			float x, yaw, r;
 		};
@@ -150,14 +151,6 @@ inline namespace MeuMat {
 
 			return vec;
 		}
-
-		// Basicamente a hipotenusa
-		// _só faz sentido para posições cardinais_
-		// TODO mas e se os valores forem negativos?
-		/*long long Distancia()
-		{
-			return Meu::MeuMat::RaizQuad(x * x + y * y + z * z);
-		}*/
 	}Ang3, *ptrVec3, *ptrAng3;
 
 	struct Vec4 { float x, y, z, w; };

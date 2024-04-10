@@ -101,7 +101,7 @@ typedef unsigned long long loop_tipo;
 typedef unsigned int loop_tipo;
 #endif
 
-// Sim, baita preguiça
+// Sim, baita preguiça [mas eu não uso mais]
 #ifdef MEU_ARCAICO
 #define Meu meu
 #defien QuantEleMat MatTam
@@ -112,6 +112,7 @@ namespace meu {
 	#include "Libs\MeuMat.hpp"
 	#include "Libs\MeuExtra.hpp"
 	#include "Libs\Estruturas.hpp"
+	#include "Libs\MeuConsole.hpp"
 	//#include 
 }
 

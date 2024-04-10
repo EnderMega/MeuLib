@@ -14,7 +14,7 @@ typedef unsigned char byte;
 
 #define TAMMATRIZ(matriz) (sizeof matriz / sizeof matriz[0])
 
-#define NUMPARACHAR(num) (num+48)	// Só funciona para um número/letra e não funciona com UNICODE
+#define NUMPARACHAR(num) (num+48)	// Só funciona para um número/letra
 
 #define PARAMIN(chr) (chr+32)	// Esperado que seja um caractere
 #define PARAMAI(chr) (chr-32)	// Esperado que seja um caractere
@@ -48,43 +48,99 @@ inline namespace MeuExtra {
 
 // § Extra
 #pragma region Extra
-	
-	// Passar um número e uma matriz de retorno
-	// Pode ser usado a macro "NUMPARACHAR" para UM número/letra no lugar se preferido
-	// INCOMPLETO, números como por exemplo "105" vão cortar o zero
-	CONSTEXPR void NumParaChar(int num, char* retorno)
+
+	// Inverter strings
+	void inverter(char* texto, int tam)
 #ifdef EXTERNO
 		;
 #else
 	{
-		int tempnum = 0;
-		int casas = 0;
+		int inver_comeco = 0;
+		int inver_fim = tam - 1;
 
-		for (loop_tipo i = 0; num != 0; i++)
+		char temp;
+
+		while (inver_comeco < inver_fim)
 		{
-			casas = 0;
-			tempnum = num;
-
-			while (tempnum > 9)
-			{
-				++casas;
-				tempnum /= 10;
-			}
-
-			retorno[i] = tempnum + 48;
-
-			num -= tempnum * meu::Pot<int, int>(10, casas);
-
-			// Isso tá horrível
-			if (num == 0 && casas > 0)
-				for (loop_tipo a = 1; casas > 0; a++, casas--)
-					retorno[i + a] = 48;
+			temp = texto[inver_comeco];
+			texto[inver_comeco] = texto[inver_fim];
+			texto[inver_fim] = temp;
+			--inver_fim;
+			++inver_comeco;
 		}
 	}
 #endif
 
+	// Meu atoi ("char" to integer)
+	// Deve ser uma matriz terminada em '\0'
+	long long matoi(const char* texto)
+#ifdef EXTERNO
+		;
+#else
+	{
+		uint i = 0;
+		long long ret = 0;
+		char neg = 1;
+
+		if (*texto == '-')
+		{
+			++i;
+			neg = -1;
+		}
+
+		for (; texto[i]; i++)
+			ret = ret * 10 + texto[i] - '0';
+
+		ret *= neg;
+
+		return ret;
+	}
+#endif
+
+	// meu itoa()
+	char* mitoa(int num, char* texto, int base)
+#ifdef EXTERNO
+		;
+#else
+	{
+		int i = 0;
+		bool negativo = false;
+
+		// Lidando com 0 explicitamente
+		if (num == 0)
+		{
+			texto[i++] = '0';
+			texto[i] = '\0';
+			return texto;
+		}
+
+		// No itoa() padrão números negativos só são lidados para base 10
+		if (num < 0 && base == 10)
+		{
+			negativo = true;
+			num = -num;
+		}
+
+		while (num != 0)
+		{
+			int temp = num % base;
+			texto[i++] = (temp > 9) ? (temp - 10) + 'a' : temp + '0';
+			num = num / base;
+		}
+
+		if (negativo)
+			texto[i++] = '-';
+
+		texto[i] = '\0';
+
+		inverter(texto, i);
+
+		return texto;	// Isso server para poder usar a função dentro de outras funções
+	}
+#endif
+
 	template <typename T>
-	// Testa se é "teste" é um dos valores de "lista"
+	// Testa se "teste" é um dos valores de "lista"
 	// "lista" Deve ser terminado em 0
 	// Retorna false se não é nem um dos valores da lista e verdadeiro caso o contrário
 	CONSTEXPR bool VarIgTeste(T teste, T* lista)
@@ -113,26 +169,6 @@ inline namespace MeuExtra {
 
 // § Matrizes
 #pragma region Matrizes
-
-	//template <typename T, typename ret>
-	//// Tamanho da matriz
-	//// Pode ser usado a macro "TAMMATRIZ" no lugar se preferido
-	//CONSTEXPR ret TamMatriz(T* matriz)
-	//{
-	//	return sizeof matriz / sizeof matriz[0];
-	//}
-
-	// Versão template da de baixo
-	/*template <typename T1, typename T2>
-	// Substitui espaços pelo segundo parâmetro
-	// Para essa versão que usa dois tipos diferentes, a função não se responsabiliza
-	// se valores com espaço maior do que o aceitável na matrix forem usados.
-	void SubstEspaços(T1* texto, T2 subst)
-	{
-		for (int i = 0; texto[i]; i++)
-			if (texto[i] == ' ')
-				texto[i] = subst;
-	}*/
 
 	// Substitui espaços pelo segundo parâmetro
 	void SubstEspaços(char* texto, char subst)
@@ -199,31 +235,6 @@ inline namespace MeuExtra {
 
 	/**********************************************************************************************************************/
 
-	// Versão template da de baixo
-	/*template <typename T1, typename T2>
-	// Compara matrizes
-	// [Versão template, não recomendado, pois essa função é feita para ignorar maiúsculas/minúsculas,
-	// exemplo, "65 e 97" serão considerados iguais; para matrizes puramente iguais use Meu::CompMat()]
-	// É esperado que seja uma matriz terminada com '\0', tudo depois de '\0' é ignorado
-	// e é esperado que elas tenham o MESMO TAMANHO ou o '\0' de uma matrix, apareça antes de a outra acabar
-	bool CompMatIg(T1* Matriz1, T2* Matriz2)
-	{
-		for (int i = 0; Matriz1[i] || Matriz2[i]; i++)
-		{
-			if (64 < Matriz1[i] && Matriz1[i] < 123)	// Verifica se é um caractere (Letra)
-			{
-				if (!(PARAMAI(Matriz1[i]) == Matriz2[i]) || !(Matriz1[i] == PARAMAI(Matriz2[i])))
-					return false;
-			}	// Eu sei que não precisa dessas chaves, mas o else _tava_ unindo com o if errado
-			else
-				if (Matriz1[i] != Matriz2[i])
-					return false;
-				
-		}
-
-		return true;
-	}*/
-		
 	// Compara matrizes e ignora capitalização
 	// [Designada para char(s)]
 	// AMBAS DEVEM ACABAR AO MESMO TEMPO, se não ele continua lendo e vê que uma acabou
@@ -350,30 +361,6 @@ inline namespace MeuExtra {
 
 	/**********************************************************************************************************************/
 
-	// Copia uma string
-	// É esperado que "Origem" seja uma matriz terminada com 0 ou '\0', tudo depois de 0 ou '\0' é ignorado
-	// "Origem" deve ser do MESMO TAMANHO OU MAIOR que "Destino"
-	// *Além de copiar a string, ela retorna "true" se a string de "Origem" foi copiada por completo e "false" se o oposto*
-//	CONSTEXPR bool CopyString(void* Destino, const void* Origem, /*tamT*/int tamDest)
-//#ifdef EXTERNO
-//		;
-//#else
-//	{
-//		//byte* dest = Destino; byte* ori = Origem;
-//
-//		for (loop_tipo i = 0; i < tamDest; ++i)
-//		{
-//			if (!((char*)Origem)[i])
-//			{
-//				((char*)Destino)[i] = 0;
-//				return true;	// Acabou
-//			}
-//			((char*)Destino)[i] = ((char*)Origem)[i];
-//		}
-//		return false;			// Ainda não acabou
-//	}
-//#endif
-
 	template<typename T>
 	CONSTEXPR void CopyMat(T* Destino, const T* Origem, loop_tipo tamDest)
 	{
@@ -391,6 +378,23 @@ inline namespace MeuExtra {
 			((byte*)Destino)[i] = ((byte*)Origem)[i];
 	}
 #endif
+
+	template<typename T>
+	// Feito para strings
+	// retorna true se copiou tudo e false se não
+	// para de copiar quando encontra um '\0'
+	CONSTEXPR bool retCopyMat(T* Destino, const T* Origem, loop_tipo tamDest)
+	{
+		loop_tipo i = 0;
+
+		for (; i < tamDest || Origem[i]; i++)
+			Destino[i] = Origem[i];
+
+		if (i == tamDest)
+			return true;
+		else
+			return false;
+	}
 
 	/**********************************************************************************************************************/
 
@@ -417,40 +421,6 @@ inline namespace MeuExtra {
 		for (loop_tipo i = 0; i < tamanho; ++i)
 			*(destino + i) = valor;
 	}
-
-	/*template <typename T1, typename T2, typename tamT>
-	// Diferentemente de std::memset, esse não funciona byte a byte, ele vai usar colocar o "valor"
-	// em cada espaço (Como em uma matriz).
-	// "tamanho" não deve ser o sizeof(matriz) mas a quantidade de elementos, pode ser usado a macro TAMMATRIZ para isso
-	void MatSet(T1* Destino, T2 valor, tamT tamanho)
-	{
-		for (loop_tipo i = 0; i < tamanho; ++i)
-			*(Destino + i) = valor;
-	}*/
-
-	// Não sei se preciso dessa se eu tenho a de baixo
-
-	template <typename T>
-	// Diferentemente de std::memset, esse não funciona byte a byte, ele vai usar colocar o "valor"
-	// em cada espaço (Como em uma matriz).
-	// "tamanho" não deve ser o sizeof(matriz) mas a quantidade de elementos, pode ser usado a macro TAMMATRIZ para isso
-	// "começo" de onde começar a modificar os valores
-	void MatSet(T* destino, T valor, loop_tipo tamanho, loop_tipo começo)
-	{
-		for (loop_tipo i = 0 + começo; i < tamanho; ++i)
-			*(destino + i) = valor;
-	}
-
-	/*template <typename T1, typename T2, typename tamT, typename comT>
-	// Diferentemente de std::memset, esse não funciona byte a byte, ele vai usar colocar o "valor"
-	// em cada espaço (Como em uma matriz).
-	// "tamanho" não deve ser o sizeof(matriz) mas a quantidade de elementos, pode ser usado a macro TAMMATRIZ para isso
-	// "começo" de onde começar a modificar os valores
-	void MatSet(T1* Destino, T2 valor, tamT tamanho, comT começo)
-	{
-		for (loop_tipo i = 0 + começo; i < tamanho; ++i)
-			*(Destino + i) = valor;
-	}*/
 
 	/**********************************************************************************************************************/
 
@@ -481,26 +451,6 @@ inline namespace MeuExtra {
 
 		while (matriz[quantidade] && quantidade < tam)
 			++quantidade;
-
-		return quantidade;
-	}
-
-	template <typename T1, typename ret = int>
-	// Retorna quantos elementos tem em uma matriz até o 0 ou '\0' mais próximo
-	// Usar essa função caso não tenha certeza se a matriz está cheia ou não é terminada com 0 ou '\0',
-	// tudo depois de 0 ou '\0' é ignorado.
-	// "estado" é (true) se está cheia ou (false) se não cheia
-	// Ela não considera o caractere nulo (0 ou '\0')
-	CONSTEXPR ret MatTam(T1* matriz, loop_tipo tam, bool* estado)
-	{
-		ret quantidade = 0;
-		*estado = false;
-
-		while (matriz[quantidade] && quantidade < tam)
-			++quantidade;
-
-		if (quantidade == tam)
-			*estado = true;
 
 		return quantidade;
 	}
